@@ -1,545 +1,304 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:slicing/pages/homepage.dart';
 import 'package:slicing/Widgets/NavBarWidget.dart';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class Cartpage extends StatelessWidget {
+final supabase = Supabase.instance.client;
+
+class Cartpage extends StatefulWidget {
+  const Cartpage({super.key});
+
   @override
+  State<Cartpage> createState() => _CartpageState();
+}
+
+class _CartpageState extends State<Cartpage> {
+  Future<List<dynamic>> fetchData() async {
+    final List<Map<String, dynamic>> response =
+        await supabase.from('food').select('*');
+    return response as List<dynamic>;
+  }
+
+  Future<void> deleteData(int id) async {
+    await supabase.from('food').delete().eq('id', id);
+    setState(() {});
+  }
+
+@override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
-        actions: [
-          SizedBox(height: 10,),
-          Row(
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => NavBarWidget()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.all(8), 
-                  shape: CircleBorder(), 
-                  backgroundColor:Colors.white,
-                      shadowColor: Colors.grey.withOpacity(0.5), 
-                      
-                ),
-                child: Icon(Icons.chevron_left,size: 40, color: Colors.black),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NavBarWidget()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.all(15),
+                shape: CircleBorder(),
+                backgroundColor: Colors.white,
+                shadowColor: Colors.grey.withOpacity(0.5),
               ),
-
-            SizedBox(width: 300),
-
-            InkWell(
-              onTap: () {},
-              child: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 10,
-                        offset: Offset(0, 3),
-                      )
-                    ]),
-                child: Icon(CupertinoIcons.person),
+              child: Icon(Icons.chevron_left, size: 24, color: Colors.red),
+            ),
+            Text(
+              'Cart',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(builder: (context) => AddPage()),
+                // );
+              },
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.all(15),
+                shape: CircleBorder(),
+                backgroundColor: Colors.white,
+                shadowColor: Colors.grey.withOpacity(0.5),
+              ),
+              child: Icon(
+                CupertinoIcons.person,
+                color: Colors.black,
+                size: 24,
               ),
             ),
           ],
         ),
-        SizedBox(width: 20,)
-        ],
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.only(top: 40, left: 20, right: 20),
+          padding: EdgeInsets.symmetric(
+              vertical: screenHeight * 0.02, horizontal: screenWidth * 0.05),
           child: Column(
             children: [
-              SizedBox(height: 20),
+              FutureBuilder<List<dynamic>>(
+                future: fetchData(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<dynamic>> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Text('No data found');
+                  } else {
+                    final List<dynamic> data = snapshot.data!;
+                    return Column(
+                      children: data.map<Widget>((item) {
+                        return Column(
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: screenHeight * 0.12,
+                                  width: screenWidth * 0.25,
+                                  margin:
+                                      EdgeInsets.only(left: screenWidth * 0.02),
+                                  padding: EdgeInsets.all(screenWidth * 0.02),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Image.asset(
+                                    "assets/burger.jpeg",
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                SizedBox(width: screenWidth * 0.04),
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: screenHeight * 0.01),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              item['name'] ?? 'Tidak ada nama',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: screenWidth * 0.045,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Spacer(),
+                                            IconButton(
+                                              icon: Icon(
+                                                  CupertinoIcons.trash,
+                                                  size: screenWidth * 0.06,
+                                                  color: Colors.red),
+                                              onPressed: () async {
+                                                final id = item['id'];
+                                                await deleteData(id);
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          "Rp. ${item['price'] ?? '0'}",
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: screenWidth * 0.04,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        SizedBox(height: screenHeight * 0.01),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  CupertinoIcons
+                                                      .minus_circle_fill,
+                                                  size: screenWidth * 0.06,
+                                                  color: const Color.fromARGB(
+                                                      217, 227, 111, 10),
+                                                ),
+                                                SizedBox(width: 5),
+                                                Text(
+                                                  "1",
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize:
+                                                        screenWidth * 0.045,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 5),
+                                                Icon(
+                                                  CupertinoIcons
+                                                      .plus_circle_fill,
+                                                  size: screenWidth * 0.06,
+                                                  color: const Color.fromARGB(
+                                                      217, 227, 111, 10),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: screenHeight * 0.02),
+                          ],
+                        );
+                      }).toList(),
+                    );
+                  }
+                },
+              ),
+              SizedBox(height: screenHeight * 0.02),
               Column(
                 children: [
-                  
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        height: 100,
-                        width: 100,
-                        margin: EdgeInsets.only(left: 8),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: SizedBox.fromSize(
-                    size: Size.fromRadius(40), 
-                    child:
-                        Image.network('images/burger2.jpg', fit: BoxFit.cover),
-                  ),
-                        )
-                      ),
-                      SizedBox(width: 15),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 5),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "Burger King Medium",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Icon(CupertinoIcons.trash,
-                                      size: 24, color: Colors.red),
-                                ],
-                              ),
-                              Text(
-                                "Rp.50.000,00",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    height: 30,
-                                    width: 90,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: [
-                                        Icon(CupertinoIcons.minus_circled,
-                                            size: 24),
-                                        Text(
-                                          "1",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                          ),
-                                        ),
-                                        Icon(CupertinoIcons.plus_circled,
-                                            size: 24),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
- Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 100,
-                        width: 100,
-                        margin: EdgeInsets.only(left: 8),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: SizedBox.fromSize(
-                    size: Size.fromRadius(40), 
-                    child:
-                        Image.network('images/burger2.jpg', fit: BoxFit.cover),
-                  ),
-                        )
-                      ),
-                      SizedBox(width: 15),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 5),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "Burger King Medium",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Icon(CupertinoIcons.trash,
-                                      size: 24, color: Colors.red),
-                                ],
-                              ),
-                              Text(
-                                "Rp.50.000,00",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    height: 30,
-                                    width: 90,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: [
-                                        Icon(CupertinoIcons.minus_circled,
-                                            size: 24),
-                                        Text(
-                                          "1",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                          ),
-                                        ),
-                                        Icon(CupertinoIcons.plus_circled,
-                                            size: 24),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-
-                  SizedBox(height: 10), 
-
-                  
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 100,
-                        width: 100,
-                        margin: EdgeInsets.only(left: 8),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: SizedBox.fromSize(
-                    size: Size.fromRadius(40), 
-                    child:
-                        Image.network('images/teh.jpg', fit: BoxFit.cover),
-                  ),
-                        )
-                      ),
-                      SizedBox(width: 15),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 5),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "Teh Botol",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Icon(CupertinoIcons.trash,
-                                      size: 24, color: Colors.red),
-                                ],
-                              ),
-                              Text(
-                                "Rp.5.000,00",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    height: 30,
-                                    width: 90,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: [
-                                        Icon(CupertinoIcons.minus_circled,
-                                            size: 24),
-                                        Text(
-                                          "1",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                        Icon(CupertinoIcons.plus_circled,
-                                            size: 24),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 10), 
-
-                  
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 100,
-                        width: 100,
-                        margin: EdgeInsets.only(left: 8),
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: SizedBox.fromSize(
-                    size: Size.fromRadius(40), 
-                    child:
-                        Image.network('images/burger2.jpg', fit: BoxFit.cover),
-                  ),
-                        )
-                      ),
-                      SizedBox(width: 15),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 5),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "Burger King Small",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Spacer(),
-                                  Icon(CupertinoIcons.trash,
-                                      size: 24, color: Colors.red),
-                                ],
-                              ),
-                              Text(
-                                "Rp.35.000,00",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    height: 30,
-                                    width: 90,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      children: [
-                                        Icon(CupertinoIcons.minus_circled,
-                                            size: 24),
-                                        Text(
-                                          "1",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                        Icon(CupertinoIcons.plus_circled,
-                                            size: 24),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Ringkasan  Belanja",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold
-                            ),
-                          )
-                        ],
-                      ),
-
-                        SizedBox(height: 10),
-                        
-                        Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "PPN 11%",
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 18),
-                          ),
-
-                          Text(
-                            "Rp.10.000,00",
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 18),
-                          )
-                        ],
-                      ),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Total Belanja",
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 18),
-                          ),
-                          Text(
-                            "Rp.94.000,00",
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 18),
-                          )
-                        ],
-                      ),
-
-                      SizedBox(height: 10),
-                      Divider(
-                        color: Colors.grey,
-                        thickness: 1,
-                      ),
-                      SizedBox(height: 10),
-
-                        Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Total Pembayaran",
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "Rp.104.000,00",
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold),
-                          )
-                        ],
-                      ),
-                      SizedBox(height: 20),
-                      Container(
-                        height: 50,
-                        width:MediaQuery.of(context).size.width / 2*2,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: Color.fromARGB(255, 36, 5, 211),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Checkout",
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+                      Text(
+                        "Ringkasan Belanja",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: screenWidth * 0.05,
+                            fontWeight: FontWeight.bold),
                       )
-
                     ],
-                  )
+                  ),
+                  SizedBox(height: screenHeight * 0.01),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "PPN 11%",
+                        style:
+                            TextStyle(color: Colors.grey, fontSize: screenWidth * 0.045),
+                      ),
+                      Text(
+                        "Rp.10.000,00",
+                        style:
+                            TextStyle(color: Colors.grey, fontSize: screenWidth * 0.045),
+                      )
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Total Belanja",
+                        style:
+                            TextStyle(color: Colors.grey, fontSize: screenWidth * 0.045),
+                      ),
+                      Text(
+                        "Rp.94.000,00",
+                        style:
+                            TextStyle(color: Colors.grey, fontSize: screenWidth * 0.045),
+                      )
+                    ],
+                  ),
+                  Divider(color: Colors.grey, thickness: 1),
+                  SizedBox(height: screenHeight * 0.01),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Total Pembayaran",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: screenWidth * 0.05,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "Rp.104.000,00",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: screenWidth * 0.05,
+                            fontWeight: FontWeight.bold),
+                      )
+                    ],
+                  ),
+                  SizedBox(height: screenHeight * 0.02),
+                  Container(
+                    height: screenHeight * 0.06,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: const Color.fromARGB(217, 227, 111, 10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Checkout",
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.05,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:slicing/pages/cartpage.dart';
 import 'package:slicing/pages/homepage.dart';
-import 'package:slicing/Widgets/AllFoodWidget.dart';
 import 'package:slicing/pages/addpage.dart';
 
 

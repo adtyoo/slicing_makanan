@@ -1,207 +1,196 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:slicing/Widgets/AppBarWidget.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:slicing/pages/addpage.dart';
-import 'package:slicing/pages/homepage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class Createpage extends StatelessWidget{
+final supabase = Supabase.instance.client;
+
+class Createpage extends StatefulWidget {
+  const Createpage({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ProductForm(),
-    );
-  }
+  State<Createpage> createState() => _CreatepageState();
 }
 
-class ProductForm extends StatefulWidget {
-  @override
-  _ProductFormState createState() => _ProductFormState();
-}
-
-class _ProductFormState extends State<ProductForm> {
+class _CreatepageState extends State<Createpage> {
   String _katagori = 'Makanan';
-  XFile? _imageFile;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  File? _imageFile;
 
-  Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? selectedImage =
-        await _picker.pickImage(source: ImageSource.gallery);
-    setState(() {
-      _imageFile = selectedImage;
-    });
+ Future pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        _imageFile = File(image.path);
+      });
+    }
   }
+
+  Future<String?> uploadImage(String path) async {
+    if (_imageFile == null) return null;
+
+    final fileName = DateTime.now().millisecondsSinceEpoch;
+    final uploadPath = 'uploads/$fileName';
+
+    final response = await supabase.storage
+        .from('food')
+        .upload(uploadPath, _imageFile!);
+
+    return supabase.storage.from('food').getPublicUrl(uploadPath);
+  }
+
+    Future<List<dynamic>> fetchData() async {
+    final response = await supabase.from('food').select('*');
+    return response as List<dynamic>;
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    final mediaWidth = MediaQuery.of(context).size.width;
+    final mediaHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        title: const Text('Tambah Produk'),
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.chevron_left, color: Colors.red),
+          onPressed: () {
+            Navigator.pop(
+              context,
+              MaterialPageRoute(builder: (context) => Addpage()),
+            );
+          },
+        ),
         actions: [
-          SizedBox(height: 10,),
-          Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          IconButton(
+            icon: Icon(CupertinoIcons.person, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(mediaWidth * 0.05),
+        child: Column(
           children: [
-            ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Nama Produk',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(mediaWidth * 0.05),
+                ),
+              ),
+            ),
+            SizedBox(height: mediaHeight * 0.02),
+            TextField(
+              controller: _priceController,
+              decoration: InputDecoration(
+                labelText: 'Harga',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(mediaWidth * 0.05),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            SizedBox(height: mediaHeight * 0.02),
+            DropdownButtonFormField<String>(
+              value: _katagori,
+              items: ['Makanan', 'Minuman']
+                  .map((category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _katagori = value!;
+                });
+              },
+              decoration: InputDecoration(
+                labelText: 'Katagori Produk',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(mediaWidth * 0.05),
+                ),
+              ),
+            ),
+            SizedBox(height: mediaHeight * 0.02),
+            GestureDetector(
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: mediaWidth * 0.03,
+                  vertical: mediaHeight * 0.015,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(mediaWidth * 0.05),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _imageFile != null
+                        ? Flexible(
+                            child: Image.file(
+                              _imageFile!,
+                              width: mediaWidth * 0.3,
+                              height: mediaHeight * 0.15,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : const Text("No image selected"),
+                    ElevatedButton(
+                      onPressed: pickImage,
+                      child: const Text("Pick Image"),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: mediaHeight * 0.02),
+            SizedBox(
+              width: double.infinity,
+              height: mediaHeight * 0.07,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final name = _nameController.text;
+                  final price = _priceController.text;
+
+                    var imageUrl = await uploadImage('uploads');
+                  if (imageUrl == null) return;
+
+
+                  await supabase.from('food').insert({
+                    'name': name,
+                    'price': price,
+                    'image_url': imageUrl,
+
+                  });
+                  Navigator.pop(
                     context,
                     MaterialPageRoute(builder: (context) => Addpage()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.all(8), 
-                  shape: CircleBorder(), 
-                  backgroundColor:Colors.white,
-                      shadowColor: Colors.grey.withOpacity(0.5), 
-                      
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(mediaWidth * 0.05),
+                  ),
+                  backgroundColor: const Color.fromARGB(217, 227, 111, 10),
+                  foregroundColor: Colors.white,
                 ),
-                child: Icon(Icons.chevron_left,size: 40, color: Colors.black),
-              ),
-
-            SizedBox(width: 310),
-
-            InkWell(
-              onTap: () {},
-              child: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 10,
-                        offset: Offset(0, 3),
-                      )
-                    ]),
-                child: Icon(CupertinoIcons.person),
+                child: Text('Submit',
+                    style: TextStyle(fontSize: mediaWidth * 0.04)),
               ),
             ),
           ],
         ),
-        SizedBox(width: 20,)
-        ],
-      ),
-      body: ListView(
-        children: [
-
-          Padding(padding: EdgeInsets.all(16),
-          child: Center(
-            child: Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10, 
-                    spreadRadius: 2,
-                    offset: Offset(0, 4), 
-                  ),
-                ]
-              ),
-              child: Form(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Nama Produk',
-                        hintText: 'Masukan Nama Produk',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20)
-                        )
-                      ),
-                    ),
-                    SizedBox(height: 20),
-
-                
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Harga',
-                      hintText: 'Masukan Harga',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-          
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: 'Kategori produk',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    value: 'Makanan',
-                    items: [
-                      DropdownMenuItem(
-                        value: 'Makanan',
-                        child: Text('Makanan'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Minuman',
-                        child: Text('Minuman'),
-                      ),
-                    ],
-                    onChanged: (value) {
-            
-                    },
-                  ),
-                  SizedBox(height: 16),
-
-            
-                 GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(_imageFile == null ? 'Choose file' : 'Image Selected'),
-                  ],
-                ),
-              ),
-            ),
-                  SizedBox(height: 16),
-
-                  
-                   ElevatedButton(
-                    onPressed: () {
-    
-                    },
-                    style: ElevatedButton.styleFrom(
-                      iconColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 50,
-                        vertical: 15,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text('Submit', style: TextStyle(fontSize: 16)),
-                  ),
-
-                    
-                  ],
-                ),
-
-                  
-            ),
-          ),
-          ),
-          )
-        ],
       ),
     );
   }

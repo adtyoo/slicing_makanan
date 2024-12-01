@@ -36,6 +36,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
   google_fonts: ^6.2.1
+  supabase_flutter: ^2.8.0
+  flutter_native_splash: ^2.4.1
+  
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +52,12 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
 
+flutter_native_splash:
+  color: "#ffffff"
+  image: images/teh.jpg
+  android: true
+  ios: true
+  web: true
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
