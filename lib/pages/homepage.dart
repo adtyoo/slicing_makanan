@@ -122,8 +122,7 @@ class _HomepageState extends State<Homepage> {
                                               'Rp. ${item['price'] ?? '0'}',
                                               style: TextStyle(
                                                 fontSize: screenWidth * 0.04,
-                                                color: Color.fromARGB(
-                                                    217, 227, 111, 10),
+                                                color: Color.fromARGB(217, 10, 129, 227),
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),

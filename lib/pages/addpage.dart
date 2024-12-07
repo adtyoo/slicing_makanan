@@ -37,7 +37,7 @@ class _AddpageState extends State<Addpage> {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => Navbarwidget()),
                 );
@@ -96,7 +96,7 @@ class _AddpageState extends State<Addpage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      backgroundColor: const Color.fromARGB(217, 227, 111, 10),
+                      backgroundColor:Color.fromARGB(217, 10, 129, 227),
                       foregroundColor: Colors.white,
                     ),
                     child: Row(

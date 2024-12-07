@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:slicing/Widgets/NavBarWidget.dart';
 import 'package:flutter/material.dart';
+import 'package:slicing/pages/homepage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final supabase = Supabase.instance.client;
@@ -36,10 +37,10 @@ class _CartpageState extends State<Cartpage> {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => NavBarWidget()),
-                );
+                Navigator.pushReplacement(
+               context,
+              MaterialPageRoute(builder: (context) => NavBarWidget()),
+              );
               },
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.all(15),
@@ -173,8 +174,7 @@ class _CartpageState extends State<Cartpage> {
                                                   CupertinoIcons
                                                       .minus_circle_fill,
                                                   size: screenWidth * 0.06,
-                                                  color: const Color.fromARGB(
-                                                      217, 227, 111, 10),
+                                                  color: Color.fromARGB(217, 10, 129, 227),
                                                 ),
                                                 SizedBox(width: 5),
                                                 Text(
@@ -190,8 +190,7 @@ class _CartpageState extends State<Cartpage> {
                                                   CupertinoIcons
                                                       .plus_circle_fill,
                                                   size: screenWidth * 0.06,
-                                                  color: const Color.fromARGB(
-                                                      217, 227, 111, 10),
+                                                  color: Color.fromARGB(217, 10, 129, 227),
                                                 ),
                                               ],
                                             ),
@@ -284,7 +283,7 @@ class _CartpageState extends State<Cartpage> {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      color: const Color.fromARGB(217, 227, 111, 10),
+                      color:Color.fromARGB(217, 10, 129, 227),
                     ),
                     child: Center(
                       child: Text(
